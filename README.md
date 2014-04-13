@@ -7,6 +7,7 @@ duplicate checking for papers.
 ## Feature 
 
 + use [CppJieba] as chinese word segmenter.
++ support utf-8 encoding.
 
 ## Usage
 
