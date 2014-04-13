@@ -2,6 +2,12 @@
 
 ## Introduction
 
+duplicate checking for papers.
+
+## Feature 
+
++ use [CppJieba] as chinese word segmenter.
+
 ## Usage
 
 ```
@@ -14,3 +20,5 @@ make
 ## Contact
 
 wuyanyi09@foxmail.com
+
+[CppJieba]:https://github.com/aszxqw/cppjieba
