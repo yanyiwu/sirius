@@ -3,6 +3,7 @@
 
 #include "globals.hpp"
 #include "CppJieba/MixSegment.hpp"
+#include <list>
 
 namespace Sirius
 {
@@ -23,6 +24,20 @@ namespace Sirius
             WordTokenidMapType _wordTokenidIndex;
 
         public:
+            typedef uint32_t DocidType;
+            typedef uint64_t FileOffsetType;
+            struct DocmetaType
+            {
+                FileOffsetType offset;
+                uint32_t length;
+            };
+        private:
+            vector<DocmetaType> _docmetaRows;
+
+        private:
+            unordered_map<TokenidType, list<DocidType> > _invertedIndex;
+
+        public:
             IndexBuilder(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath), _tokenidAutoIncr(0)
             {
                 assert(_segment);
@@ -35,26 +50,19 @@ namespace Sirius
                 ifstream ifs(filePath.c_str());
                 assert(ifs);
                 string line;
-                vector<string> buf;
-                vector<string> words;
-                for(size_t lineno = 1; getline(ifs, line); lineno++)
+                FileOffsetType offsetCursor = 0;
+                size_t lineno = 1;
+                string title, content;
+                DocidType docid;
+                while(_getDocInfoAndUpdateIndex(ifs, offsetCursor, lineno, docid, title, content))
                 {
-                    if(!split(line, buf, "\t") || buf.size() != LINE_COLLUMN_N)
-                    {
-                        LogError("line[%u:%s] illegal.", lineno, line.c_str());
-                        continue;
-                    }
-
-                    const string& title = buf[0];
-                    const string& content = buf[1];
-
-                    buildTitleIndex(title);
+                    buildTitleIndex(title, docid);
                     buildContentIndex(content);
                 }
                 return true;
             }
 
-            bool buildTitleIndex(const string& title)
+            bool buildTitleIndex(const string& title, const DocidType& docid)
             {
                 vector<TokenidType> tokenids;
                 _tokenizeAndUpdateIndex(title, tokenids);
@@ -67,6 +75,34 @@ namespace Sirius
             }
 
         private:
+            ifstream& _getDocInfoAndUpdateIndex(ifstream& ifs, FileOffsetType& offset, size_t& lineno, DocidType& docid, string& title, string& content)
+            {
+                string line;
+                vector<string> buf;
+                DocmetaType docmeta;
+                for(;getline(ifs, line); lineno ++)
+                {
+                    docmeta.offset = offset;
+                    docmeta.length = line.size();
+
+                    offset += docmeta.length + 1;
+
+                    if(!split(line, buf, "\t") || buf.size() != LINE_COLLUMN_N)
+                    {
+                        LogError("line[%u:%s] illegal.", lineno, line.c_str());
+                        continue;
+                    }
+
+                    _docmetaRows.push_back(docmeta);
+                    docid = _docmetaRows.size() - 1;
+
+                    title = buf[0];
+                    content = buf[1];
+
+                    break;
+                }
+                return ifs;
+            }
             void _tokenizeAndUpdateIndex(const string& text, vector<TokenidType>& tokenids)
             {
                 vector<string> words;
