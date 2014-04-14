@@ -16,14 +16,12 @@ namespace Sirius
         private:
             MixSegment _segment;
             unordered_set<string> _stopWords;
-        public:
             typedef uint32_t TokenidType;
             typedef unordered_map<string, TokenidType> WordTokenidMapType;
         private:
             TokenidType _tokenidAutoIncr;
             WordTokenidMapType _wordTokenidIndex;
 
-        public:
             typedef uint32_t DocidType;
             typedef uint64_t FileOffsetType;
             struct DocmetaType
@@ -35,7 +33,8 @@ namespace Sirius
             vector<DocmetaType> _docmetaRows;
 
         private:
-            unordered_map<TokenidType, list<DocidType> > _invertedIndex;
+            typedef unordered_map<TokenidType, set<DocidType> > InvertedIndexType;
+            InvertedIndexType _titleInvertedIndex;
 
         public:
             IndexBuilder(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath), _tokenidAutoIncr(0)
@@ -61,11 +60,20 @@ namespace Sirius
                 }
                 return true;
             }
+        public:
+            bool query(const string& title, string& rawText) const
+            {
+                vector<TokenidType> tokenids;
+                _tokenize(title, tokenids);
+                return true;
+            }
+        public:
 
             bool buildTitleIndex(const string& title, const DocidType& docid)
             {
                 vector<TokenidType> tokenids;
                 _tokenizeAndUpdateIndex(title, tokenids);
+                _buildInvertedIndex(docid, tokenids, _titleInvertedIndex);
                 return true;
             }
 
@@ -74,6 +82,15 @@ namespace Sirius
                 return true;
             }
 
+
+        private:
+            void _buildInvertedIndex(const DocidType & docid, const vector<TokenidType>& tokenids, InvertedIndexType& invertedIndex) const
+            {
+                for(size_t i = 0 ; i < tokenids.size(); i++)
+                {
+                    invertedIndex[tokenids[i]].insert(docid);
+                }
+            }
         private:
             ifstream& _getDocInfoAndUpdateIndex(ifstream& ifs, FileOffsetType& offset, size_t& lineno, DocidType& docid, string& title, string& content)
             {
@@ -103,6 +120,22 @@ namespace Sirius
                 }
                 return ifs;
             }
+
+            void _tokenize(const string& text, vector<TokenidType>& tokenids) const
+            {
+                vector<string> words;
+                _segment.cut(text, words);
+                WordTokenidMapType::const_iterator citer;
+                for(size_t i = 0; i < words.size(); i ++)
+                {
+                    const string& word = words[i];
+                    if(_wordTokenidIndex.end() != (citer = _wordTokenidIndex.find(word)))
+                    {
+                        tokenids.push_back(citer->second);
+                    }
+                }
+            }
+
             void _tokenizeAndUpdateIndex(const string& text, vector<TokenidType>& tokenids)
             {
                 vector<string> words;
