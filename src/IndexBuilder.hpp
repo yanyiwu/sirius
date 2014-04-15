@@ -65,6 +65,27 @@ namespace Sirius
             {
                 vector<TokenidType> tokenids;
                 _tokenize(title, tokenids);
+                InvertedIndexType::const_iterator citer ;
+                typedef InvertedIndexType::value_type InvertedIndexValueType;
+
+                map<DocidType, size_t> docCountMap;
+
+                for(size_t i = 0; i < tokenids.size(); i ++)
+                {
+                    if(_titleInvertedIndex.end() !=( citer = _titleInvertedIndex.find(tokenids[i])))
+                    {
+                        const InvertedIndexValueType & value = citer->second;
+                        for(InvertedIndexValueType::const_iterator viter = value.begin(); viter != value.end(); viter++)
+                        {
+                            docCountMap[*viter] ++;
+                        }
+                    }
+                }
+
+                vector<pair<DocidType, size_t> > docCounts;
+
+                copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.end()));
+
                 return true;
             }
         public:
