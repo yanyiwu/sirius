@@ -13,5 +13,14 @@ TEST(IndexBuilder, Test1)
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
     ASSERT_TRUE(builder.dumpWordTokenidMap(OUT_FILE_PATH));
+    string res;
+    ifstream ifs(TITLE_QUERY_PATH);
+    ASSERT_TRUE(ifs);
+    string line;
+    while(getline(ifs, line))
+    {
+        print(line);
+        builder.query(line, res);
+    }
     
 }

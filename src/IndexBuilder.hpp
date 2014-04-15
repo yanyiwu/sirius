@@ -9,7 +9,8 @@ namespace Sirius
 {
     using namespace CppJieba;
 
-    enum {LINE_COLLUMN_N = 2};
+    const size_t LINE_COLLUMN_N = 2;
+    const size_t TOP_N = 5;
 
     class IndexBuilder: public InitOnOff
     {
@@ -60,13 +61,22 @@ namespace Sirius
                 }
                 return true;
             }
+        private:
+            template <class T>
+                struct _greater_pair_second: public binary_function<T, T, T>
+                {
+                    bool operator()(const T& lhs, const T& rhs) const
+                    {
+                        return lhs.second > rhs.second;
+                    }
+                };
         public:
             bool query(const string& title, string& rawText) const
             {
                 vector<TokenidType> tokenids;
                 _tokenize(title, tokenids);
                 InvertedIndexType::const_iterator citer ;
-                typedef InvertedIndexType::value_type InvertedIndexValueType;
+                typedef InvertedIndexType::mapped_type InvertedIndexValueType;
 
                 map<DocidType, size_t> docCountMap;
 
@@ -85,7 +95,10 @@ namespace Sirius
                 vector<pair<DocidType, size_t> > docCounts;
 
                 copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.end()));
-
+                size_t topN = (TOP_N < docCounts.size() ? TOP_N : docCounts.size());
+                partial_sort(docCounts.begin(), docCounts.begin() + topN, docCounts.end(), _greater_pair_second<pair<DocidType, size_t> >());
+                docCounts.resize(topN);
+                print(docCounts);
                 return true;
             }
         public:
