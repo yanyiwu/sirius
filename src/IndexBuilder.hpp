@@ -18,10 +18,9 @@ namespace Sirius
             MixSegment _segment;
             unordered_set<string> _stopWords;
             typedef uint32_t TokenidType;
-            typedef unordered_map<string, TokenidType> WordTokenidMapType;
+            typedef unordered_map<string, TokenidType> WordMapType;
         private:
-            TokenidType _tokenidAutoIncr;
-            WordTokenidMapType _wordTokenidIndex;
+            WordMapType _wordMap;
 
             typedef uint32_t DocidType;
             typedef uint64_t FileOffsetType;
@@ -31,14 +30,31 @@ namespace Sirius
                 uint32_t length;
             };
         private:
-            vector<DocmetaType> _docmetaRows;
+            struct DocGeneralInfo
+            {
+                DocmetaType meta;
+                string title;
+                string content;
+            };
+            struct DocForwardIndexInfo
+            {
+                vector<TokenidType>  titleTokens;
+                vector<TokenidType> contentTokens;
+            };
+            struct DocInfo
+            {
+                DocGeneralInfo general;
+                DocForwardIndexInfo index;
+            };
+            vector<DocInfo> _docInfoRows;
 
         private:
             typedef unordered_map<TokenidType, set<DocidType> > InvertedIndexType;
             InvertedIndexType _titleInvertedIndex;
+            InvertedIndexType _contentInvertedIndex;
 
         public:
-            IndexBuilder(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath), _tokenidAutoIncr(0)
+            IndexBuilder(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath)
             {
                 assert(_segment);
                 _setInitFlag(_segment);
@@ -49,27 +65,14 @@ namespace Sirius
             {
                 ifstream ifs(filePath.c_str());
                 assert(ifs);
-                string line;
-                FileOffsetType offsetCursor = 0;
-                size_t lineno = 1;
-                string title, content;
-                DocidType docid;
-                while(_getDocInfoAndUpdateIndex(ifs, offsetCursor, lineno, docid, title, content))
-                {
-                    buildTitleIndex(title, docid);
-                    buildContentIndex(content);
-                }
+                _wrapDocGeneralInfos(ifs, _docInfoRows);
+                _buildDocForwardIndexInfos(_docInfoRows, _wordMap);
+
+                _buildTitleInvertedIndex(_docInfoRows, _titleInvertedIndex);
+                _buildContentInvertedIndex(_docInfoRows, _contentInvertedIndex);
+                
                 return true;
             }
-        private:
-            template <class T>
-                struct _greater_pair_second: public binary_function<T, T, T>
-                {
-                    bool operator()(const T& lhs, const T& rhs) const
-                    {
-                        return lhs.second > rhs.second;
-                    }
-                };
         public:
             bool query(const string& title, string& rawText) const
             {
@@ -94,47 +97,86 @@ namespace Sirius
 
                 vector<pair<DocidType, size_t> > docCounts;
 
-                copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.end()));
+                copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.begin()));
                 size_t topN = (TOP_N < docCounts.size() ? TOP_N : docCounts.size());
                 partial_sort(docCounts.begin(), docCounts.begin() + topN, docCounts.end(), _greater_pair_second<pair<DocidType, size_t> >());
                 docCounts.resize(topN);
-                print(docCounts);
+
+                size_t docid;
+                for(size_t i = 0; i  < docCounts.size(); i ++)
+                {
+                    docid = docCounts[i].first;
+                    cout << _calculateSimilarityRate(tokenids, _docInfoRows[docid].index.titleTokens) << endl;
+                    print(_docInfoRows[docid].general.title);
+                }
                 return true;
             }
-        public:
-
-            bool buildTitleIndex(const string& title, const DocidType& docid)
-            {
-                vector<TokenidType> tokenids;
-                _tokenizeAndUpdateIndex(title, tokenids);
-                _buildInvertedIndex(docid, tokenids, _titleInvertedIndex);
-                return true;
-            }
-
-            bool buildContentIndex(const string& content)
-            {
-                return true;
-            }
-
 
         private:
-            void _buildInvertedIndex(const DocidType & docid, const vector<TokenidType>& tokenids, InvertedIndexType& invertedIndex) const
+            void _buildTitleInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& titleIIndex) const
             {
-                for(size_t i = 0 ; i < tokenids.size(); i++)
+                for(size_t docid = 0; docid < docInfos.size(); docid ++)
                 {
-                    invertedIndex[tokenids[i]].insert(docid);
+                    const vector<TokenidType>& tokens = docInfos[docid].index.titleTokens;
+                    for(size_t ti = 0; ti < tokens.size(); ti++)
+                    {
+                        titleIIndex[tokens[ti]].insert(docid);
+                    }
                 }
             }
-        private:
-            ifstream& _getDocInfoAndUpdateIndex(ifstream& ifs, FileOffsetType& offset, size_t& lineno, DocidType& docid, string& title, string& content)
+            void _buildContentInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& contentIIndex) const
             {
+                for(size_t docid = 0; docid < docInfos.size(); docid ++)
+                {
+                    const vector<TokenidType>& tokens = docInfos[docid].index.contentTokens;
+                    for(size_t ti = 0; ti < tokens.size(); ti++)
+                    {
+                        contentIIndex[tokens[ti]].insert(docid);
+                    }
+                }
+            }
+
+            double _calculateSimilarityRate(const vector<TokenidType>& lhs, const vector<TokenidType>& rhs) const
+            {
+                size_t commonCnt = 0;
+                for(size_t i = 0; i < lhs.size(); i++)
+                {
+                    if(rhs.end() != find(rhs.begin(), rhs.end(), lhs[i]))
+                    {
+                        commonCnt ++;
+                    }
+                }
+                return 2.0 * commonCnt / (lhs.size() + rhs.size());
+            }
+
+        private:
+            void _buildDocForwardIndexInfos(vector<DocInfo>& docInfos, WordMapType& wordMap) const
+            {
+                vector<string> words;
+                for(size_t docid = 0; docid < docInfos.size(); docid++)
+                {
+                    _segment.cut(docInfos[docid].general.title, words);
+                    _updateWordMap(words, wordMap);
+                    _tokenize(words, docInfos[docid].index.titleTokens);
+                    _segment.cut(docInfos[docid].general.content, words);
+                    _updateWordMap(words, wordMap);
+                    _tokenize(words, docInfos[docid].index.contentTokens);
+                }
+            }
+            void _wrapDocGeneralInfos(ifstream& ifs, vector<DocInfo>& docInfos) const
+            {
+                assert(ifs);
                 string line;
                 vector<string> buf;
                 DocmetaType docmeta;
-                for(;getline(ifs, line); lineno ++)
+                DocInfo docInfo;
+                FileOffsetType offset = 0;
+                for(size_t lineno = 0; getline(ifs, line); lineno ++)
                 {
                     docmeta.offset = offset;
-                    docmeta.length = line.size();
+
+                    docInfo.general.meta.offset = offset;
+                    docInfo.general.meta.length = line.size();
 
                     offset += docmeta.length + 1;
 
@@ -143,54 +185,62 @@ namespace Sirius
                         LogError("line[%u:%s] illegal.", lineno, line.c_str());
                         continue;
                     }
+                    
 
-                    _docmetaRows.push_back(docmeta);
-                    docid = _docmetaRows.size() - 1;
-
-                    title = buf[0];
-                    content = buf[1];
-
-                    break;
+                    docInfo.general.title = buf[0];
+                    docInfo.general.content = buf[1];
+                    docInfos.push_back(docInfo);
                 }
-                return ifs;
             }
 
-            void _tokenize(const string& text, vector<TokenidType>& tokenids) const
+            void _tokenize(const vector<string>& words, vector<TokenidType>& tokenids) const
             {
-                vector<string> words;
-                _segment.cut(text, words);
-                WordTokenidMapType::const_iterator citer;
+                WordMapType::const_iterator citer;
                 for(size_t i = 0; i < words.size(); i ++)
                 {
                     const string& word = words[i];
-                    if(_wordTokenidIndex.end() != (citer = _wordTokenidIndex.find(word)))
+                    if(_wordMap.end() != (citer = _wordMap.find(word)))
                     {
                         tokenids.push_back(citer->second);
                     }
                 }
             }
 
-            void _tokenizeAndUpdateIndex(const string& text, vector<TokenidType>& tokenids)
+            void _tokenize(const string& text, vector<TokenidType>& tokenids) const
             {
                 vector<string> words;
                 _segment.cut(text, words);
-                WordTokenidMapType::const_iterator citer ;
+                WordMapType::const_iterator citer;
+                for(size_t i = 0; i < words.size(); i ++)
+                {
+                    const string& word = words[i];
+                    if(_wordMap.end() != (citer = _wordMap.find(word)))
+                    {
+                        tokenids.push_back(citer->second);
+                    }
+                }
+            }
+
+            void _updateWordMap(const vector<string>& words, WordMapType& mp) const
+            {
+                WordMapType::const_iterator citer ;
+                size_t size;
                 for(size_t i = 0; i < words.size(); i++)
                 {
                     const string& word = words[i];
                     if(!isIn(_stopWords, word))
                     {
-                        if(_wordTokenidIndex.end() == (citer = _wordTokenidIndex.find(word)))
+                        if(mp.end() == (citer = mp.find(word)))
                         {
-                            _wordTokenidIndex[word] = _tokenidAutoIncr ++;
+                            size = mp.size();
+                            mp[word] = size;
                         }
-                        tokenids.push_back(_wordTokenidIndex[word]);
                     }
                 }
             }
 
         public:
-            bool dumpWordTokenidMap(const string& filePath) const
+            bool dumpWordMap(const string& filePath) const
             {
                 FILE * fout = fopen(filePath.c_str(), "w");
                 if(!fout)
@@ -200,7 +250,7 @@ namespace Sirius
                 }
                 size_t len;
                 TokenidType tokenid;
-                for(WordTokenidMapType::const_iterator citer = _wordTokenidIndex.begin(); citer != _wordTokenidIndex.end(); citer++)
+                for(WordMapType::const_iterator citer = _wordMap.begin(); citer != _wordMap.end(); citer++)
                 {
                     len = citer->first.size();
                     tokenid = citer->second;
@@ -212,6 +262,15 @@ namespace Sirius
                 return true;
             }
 
+        private:
+            template <class T>
+                struct _greater_pair_second: public binary_function<T, T, T>
+                {
+                    bool operator()(const T& lhs, const T& rhs) const
+                    {
+                        return lhs.second > rhs.second;
+                    }
+                };
     };
 }
 
