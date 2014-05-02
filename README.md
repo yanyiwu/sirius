@@ -2,12 +2,12 @@
 
 ## Introduction
 
-duplicate checking for papers.
+Duplicate Checking for Papers(Title and Abstract).
 
 ## Feature 
 
 + use [CppJieba] as chinese word segmenter.
-+ support utf-8 encoding.
++ support `utf-8` encoding.
 
 ## Usage
 
