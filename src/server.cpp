@@ -3,44 +3,10 @@
 #include <string>
 #include <ctype.h>
 #include <string.h>
-#include "Husky/EpollServer.hpp"
 #include "CppJieba/Limonp/Config.hpp"
-#include "CppJieba/MixSegment.hpp"
+#include "RequestHandler.hpp"
 
-using namespace Husky;
-using namespace CppJieba;
-
-class ReqHandler: public IRequestHandler
-{
-    public:
-        ReqHandler(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath){};
-        virtual ~ReqHandler(){};
-    public:
-        virtual bool do_GET(const HttpReqInfo& httpReq, string& strSnd) const
-        {
-            string sentence, tmp;
-            vector<string> words;
-            httpReq.GET("key", tmp); 
-            URLDecode(tmp, sentence);
-            _segment.cut(sentence, words);
-            if(httpReq.GET("format", tmp) && tmp == "simple")
-            {
-                join(words.begin(), words.end(), strSnd, " ");
-                return true;
-            }
-            strSnd << words;
-            return true;
-        }
-        virtual bool do_POST(const HttpReqInfo& httpReq, string& strSnd) const
-        {
-            vector<string> words;
-            _segment.cut(httpReq.getBody(), words);
-            strSnd << words;
-            return true;
-        }
-    private:
-        MixSegment _segment;
-};
+using namespace Sirius;
 
 bool run(int argc, char** argv)
 {
@@ -75,7 +41,8 @@ bool run(int argc, char** argv)
         return false;
     }
 
-    ReqHandler reqHandler(dictPath, modelPath);
+    IndexBuilder indexBuilder(dictPath, modelPath);
+    ReqHandler reqHandler(indexBuilder);
     EpollServer sf(port, &reqHandler);
     return sf.start();
 }
