@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <string>
-#include "Limonp/logger.hpp"
-#include "Limonp/str_functs.hpp"
+#include "../CppJieba/Limonp/logger.hpp"
+#include "../CppJieba/Limonp/str_functs.hpp"
 
 namespace Husky
 {
