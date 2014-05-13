@@ -8,41 +8,16 @@
 namespace Sirius
 {
     using namespace CppJieba;
-
-
     class IndexBuilder: public InitOnOff
     {
         private:
             MixSegment _segment;
             unordered_set<string> _stopWords;
-            typedef size_t TokenidType;
-            typedef unordered_map<string, TokenidType> WordMapType;
         private:
+            typedef unordered_map<string, TokenidType> WordMapType;
             WordMapType _wordMap;
+            
 
-            typedef size_t DocidType;
-            struct DocmetaType
-            {
-                size_t offset;
-                size_t length;
-            };
-            struct DocGeneralInfo
-            {
-                size_t id;
-                DocmetaType meta;
-                string title;
-                string content;
-            };
-            struct DocForwardIndexInfo
-            {
-                vector<TokenidType>  titleTokens;
-                vector<TokenidType> contentTokens;
-            };
-            struct DocInfo
-            {
-                DocGeneralInfo general;
-                DocForwardIndexInfo index;
-            };
         private:
             vector<DocInfo> _docInfoRows;
 
@@ -54,11 +29,11 @@ namespace Sirius
 
         public:
             IndexBuilder(const string& dictPath, const string& modelPath, const string& stopWordPath): _segment(dictPath, modelPath)
-        {
-            assert(_segment);
-            _loadStopWords(stopWordPath);
-            _setInitFlag(_segment);
-        }
+            {
+                assert(_segment);
+                _loadStopWords(stopWordPath);
+                _setInitFlag(_segment);
+            }
             ~IndexBuilder(){}
         public:
             bool build(const string& filePath)
@@ -72,50 +47,25 @@ namespace Sirius
                 return true;
             }
         private:
-            void _searchTopN(const InvertedIndexType& index, const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docs) const 
+            void _query(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
             {
-                map<DocidType, size_t> docCountMap;
-
-                for(size_t i = 0; i < tokenids.size(); i ++)
-                {
-                    const InvertedIndexValueType* ptr = _search(index, tokenids[i]);
-                    if(ptr)
-                    {
-                        for(InvertedIndexValueType::const_iterator viter = ptr->begin(); viter != ptr->end(); viter++)
-                        {
-                            docCountMap[*viter] ++;
-                        }
-                    }
-                }
-
-                vector<pair<DocidType, size_t> > docCounts;
-                _sortTopN(docCountMap, docCounts, topN);
-
-                //size_t docid;
-                for(size_t i = 0; i  < docCounts.size(); i ++)
-                {
-                    //docid = docCounts[i].first;
-                    //print(_calculateSimilarityRate(tokenids, _docInfoRows[docid].index.titleTokens));
-                    //print(_docInfoRows[docid].general.title);
-                    docs.push_back(docCounts[i].first);
-                }
+                vector<TokenidType> tokenids;
+                _tokenize(text, tokenids);
+                _searchTopN(index, tokenids, topN, docIds);
             }
         public:
-            bool queryTitle(const string& title, vector<DocidType>& docIds) const
+            void query(const RequestData& req, ResponseData& res)
             {
-                vector<TokenidType> tokenids;
-                _tokenize(title, tokenids);
-                _searchTopN(_titleInvertedIndex, tokenids, TITLE_TOP_N, docIds);
-
-                return true;
+            }
+        public:
+            void queryTitle(const string& title, vector<DocidType>& docIds) const
+            {
+                _query(title, _titleInvertedIndex, TITLE_TOP_N, docIds);
             }
 
-            bool queryContent(const string& content, vector<DocidType>& docIds) const
+            void queryContent(const string& content, vector<DocidType>& docIds) const
             {
-                vector<TokenidType> tokenids;
-                _tokenize(content, tokenids);
-                _searchTopN(_contentInvertedIndex, tokenids, CONTENT_TOP_N, docIds);
-                return true;
+                _query(content, _contentInvertedIndex, CONTENT_TOP_N, docIds);
             }
 
         private:
@@ -123,7 +73,7 @@ namespace Sirius
             {
                 for(size_t docid = 0; docid < docInfos.size(); docid ++)
                 {
-                    const vector<TokenidType>& tokens = docInfos[docid].index.titleTokens;
+                    const vector<TokenidType>& tokens = docInfos[docid].titleTokens;
                     for(size_t ti = 0; ti < tokens.size(); ti++)
                     {
                         titleIIndex[tokens[ti]].insert(docid);
@@ -134,7 +84,7 @@ namespace Sirius
             {
                 for(size_t docid = 0; docid < docInfos.size(); docid ++)
                 {
-                    const vector<TokenidType>& tokens = docInfos[docid].index.contentTokens;
+                    const vector<TokenidType>& tokens = docInfos[docid].contentTokens;
                     for(size_t ti = 0; ti < tokens.size(); ti++)
                     {
                         contentIIndex[tokens[ti]].insert(docid);
@@ -161,12 +111,12 @@ namespace Sirius
                 vector<string> words;
                 for(size_t docid = 0; docid < docInfos.size(); docid++)
                 {
-                    _segment.cut(docInfos[docid].general.title, words);
+                    _segment.cut(docInfos[docid].title, words);
                     _updateWordMap(words, wordMap);
-                    _tokenize(words, docInfos[docid].index.titleTokens);
-                    _segment.cut(docInfos[docid].general.content, words);
+                    _tokenize(words, docInfos[docid].titleTokens);
+                    _segment.cut(docInfos[docid].content, words);
                     _updateWordMap(words, wordMap);
-                    _tokenize(words, docInfos[docid].index.contentTokens);
+                    _tokenize(words, docInfos[docid].contentTokens);
                 }
             }
             const InvertedIndexValueType* _search(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const
@@ -184,17 +134,15 @@ namespace Sirius
                 assert(ifs);
                 string line;
                 vector<string> buf;
-                DocmetaType docmeta;
                 DocInfo docInfo;
                 size_t offset = 0;
                 for(size_t lineno = 0; getline(ifs, line); lineno ++)
                 {
-                    docmeta.offset = offset;
 
-                    docInfo.general.meta.offset = offset;
-                    docInfo.general.meta.length = line.size();
+                    docInfo.offset = offset;
+                    docInfo.length = line.size();
 
-                    offset += docmeta.length + 1;
+                    offset += docInfo.length + 1;
 
                     if(!split(line, buf, "\t") || buf.size() != LINE_COLLUMN_N)
                     {
@@ -202,10 +150,10 @@ namespace Sirius
                         continue;
                     }
 
-                    docInfo.general.id = atoi(buf[0].c_str());
-                    assert(docInfo.general.id);
-                    docInfo.general.title = buf[1];
-                    docInfo.general.content = buf[2];
+                    docInfo.id = atoi(buf[0].c_str());
+                    assert(docInfo.id);
+                    docInfo.title = buf[1];
+                    docInfo.content = buf[2];
                     docInfos.push_back(docInfo);
                 }
             }
@@ -305,6 +253,34 @@ namespace Sirius
                         return lhs.second > rhs.second;
                     }
                 };
+        private:
+            void _searchTopN(const InvertedIndexType& index, const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docs) const 
+            {
+                map<DocidType, size_t> docCountMap;
+
+                for(size_t i = 0; i < tokenids.size(); i ++)
+                {
+                    const InvertedIndexValueType* ptr = _search(index, tokenids[i]);
+                    if(ptr)
+                    {
+                        for(InvertedIndexValueType::const_iterator viter = ptr->begin(); viter != ptr->end(); viter++)
+                        {
+                            docCountMap[*viter] ++;
+                        }
+                    }
+                }
+
+                vector<pair<DocidType, size_t> > docCounts;
+                _sortTopN(docCountMap, docCounts, topN);
+
+                for(size_t i = 0; i  < docCounts.size(); i ++)
+                {
+                    //docid = docCounts[i].first;
+                    //print(_calculateSimilarityRate(tokenids, _docInfoRows[docid].index.titleTokens));
+                    //print(_docInfoRows[docid].general.title);
+                    docs.push_back(docCounts[i].first);
+                }
+            }
     };
 }
 

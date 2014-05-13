@@ -23,7 +23,6 @@ TEST(IndexBuilder, Title)
     string line;
     while(getline(ifs, line))
     {
-        print(line);
         builder.queryTitle(line, res);
     }
     
@@ -41,7 +40,6 @@ TEST(IndexBuilder, Content)
     string line;
     while(getline(ifs, line))
     {
-        print(line);
         builder.queryContent(line, res);
     }
     
