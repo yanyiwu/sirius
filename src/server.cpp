@@ -42,7 +42,7 @@ bool run(int argc, char** argv)
     }
 
     IndexBuilder indexBuilder(dictPath, modelPath);
-    ReqHandler reqHandler(indexBuilder);
+    RequestHandler reqHandler(indexBuilder);
     EpollServer sf(port, &reqHandler);
     return sf.start();
 }

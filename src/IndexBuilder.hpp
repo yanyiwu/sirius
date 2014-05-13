@@ -9,9 +9,6 @@ namespace Sirius
 {
     using namespace CppJieba;
 
-    const size_t LINE_COLLUMN_N = 2;
-    const size_t TITLE_TOP_N = 5;
-    const size_t CONTENT_TOP_N = 1;
 
     class IndexBuilder: public InitOnOff
     {
@@ -75,7 +72,7 @@ namespace Sirius
                 return true;
             }
         public:
-            bool queryTitle(const string& title, string& rawText) const
+            bool queryTitle(const string& title, vector<size_t>& docIds) const
             {
                 vector<TokenidType> tokenids;
                 _tokenize(title, tokenids);
@@ -107,13 +104,14 @@ namespace Sirius
                 for(size_t i = 0; i  < docCounts.size(); i ++)
                 {
                     docid = docCounts[i].first;
-                    cout << _calculateSimilarityRate(tokenids, _docInfoRows[docid].index.titleTokens) << endl;
+                    print(_calculateSimilarityRate(tokenids, _docInfoRows[docid].index.titleTokens));
                     print(_docInfoRows[docid].general.title);
+                    docIds.push_back(docid);
                 }
                 return true;
             }
 
-            bool queryContent(const string& content, string& rawText) const
+            bool queryContent(const string& content, vector<size_t>& docIds) const
             {
                 vector<TokenidType> tokenids;
                 _tokenize(content, tokenids);
@@ -145,8 +143,9 @@ namespace Sirius
                 for(size_t i = 0; i  < docCounts.size(); i ++)
                 {
                     docid = docCounts[i].first;
-                    cout << _calculateSimilarityRate(tokenids, _docInfoRows[docid].index.contentTokens) << endl;
+                    print(_calculateSimilarityRate(tokenids, _docInfoRows[docid].index.contentTokens));
                     print(_docInfoRows[docid].general.content);
+                    docIds.push_back(docid);
                 }
                 return true;
             }
@@ -221,7 +220,7 @@ namespace Sirius
 
                     if(!split(line, buf, "\t") || buf.size() != LINE_COLLUMN_N)
                     {
-                        LogError("line[%u:%s] illegal.", lineno, line.c_str());
+                        LogWarn("line[%u:%s] illegal.", lineno, line.c_str());
                         continue;
                     }
                     

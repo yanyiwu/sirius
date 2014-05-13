@@ -8,12 +8,12 @@ namespace Sirius
 {
     using namespace Husky;
 
-    class ReqHandler: public IRequestHandler
+    class RequestHandler: public IRequestHandler
     {
         public:
-            ReqHandler(IndexBuilder & index): _index(index)
+            RequestHandler(IndexBuilder & index): _index(index)
             {};
-            virtual ~ReqHandler(){};
+            virtual ~RequestHandler(){};
         public:
             virtual bool do_GET(const HttpReqInfo& httpReq, string& strSnd) const
             {
@@ -21,7 +21,21 @@ namespace Sirius
             }
             virtual bool do_POST(const HttpReqInfo& httpReq, string& strSnd) const
             {
-                return false;
+                const string& body = httpReq.getBody();
+                vector<string> lines;
+                if(!split(body, lines, "\t") || lines.size() != POST_COLLUMN_N)
+                {
+                    LogError("post body illegal [%s]", body.c_str());
+                    return false;
+                }
+                size_t id = atoi(lines[0].c_str());
+                const string& title = lines[1];
+                const string& content = lines[2];
+                vector<size_t> docIds;
+                _index.queryTitle(title, docIds);
+                strSnd << docIds;
+                LogInfo("do_POST result [%s]", strSnd.c_str());
+                return true;
             }
         private:
             IndexBuilder & _index;

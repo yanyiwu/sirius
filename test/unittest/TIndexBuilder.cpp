@@ -16,7 +16,7 @@ TEST(IndexBuilder, Title)
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
     ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));
-    string res;
+    vector<size_t> res;
     ifstream ifs(TITLE_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;
@@ -34,7 +34,7 @@ TEST(IndexBuilder, Content)
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
     ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));
-    string res;
+    vector<size_t> res;
     ifstream ifs(CONTENT_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;

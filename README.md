@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Duplicate Checking for Papers(Title and Abstract).
+Near-Duplicate Checking for Papers(Title and Abstract).
 
 ## Feature 
 
@@ -17,6 +17,19 @@ cd build
 cmake ..
 make
 ```
+
+### start server
+
+```
+./bin/SiriusServer ../conf/sirius_server.conf
+```
+
+### client example
+
+```
+curl -d @- "http://127.0.0.1:11200/" < ../test/testdata/curl_post_data.utf8
+```
+
 
 ## Contact
 
