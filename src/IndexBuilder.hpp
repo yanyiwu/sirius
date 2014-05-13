@@ -54,10 +54,6 @@ namespace Sirius
                 _searchTopN(index, tokenids, topN, docIds);
             }
         public:
-            void query(const RequestData& req, ResponseData& res)
-            {
-            }
-        public:
             void queryTitle(const string& title, vector<DocidType>& docIds) const
             {
                 _query(title, _titleInvertedIndex, TITLE_TOP_N, docIds);
