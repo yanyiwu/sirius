@@ -53,11 +53,11 @@ namespace Sirius
 
         public:
             IndexBuilder(const string& dictPath, const string& modelPath, const string& stopWordPath): _segment(dictPath, modelPath)
-            {
-                assert(_segment);
-                _loadStopWords(stopWordPath);
-                _setInitFlag(_segment);
-            }
+        {
+            assert(_segment);
+            _loadStopWords(stopWordPath);
+            _setInitFlag(_segment);
+        }
             ~IndexBuilder(){}
         public:
             bool build(const string& filePath)
@@ -67,7 +67,7 @@ namespace Sirius
 
                 _buildTitleInvertedIndex(_docInfoRows, _titleInvertedIndex);
                 _buildContentInvertedIndex(_docInfoRows, _contentInvertedIndex);
-                
+
                 return true;
             }
         public:
@@ -93,11 +93,7 @@ namespace Sirius
                 }
 
                 vector<pair<DocidType, size_t> > docCounts;
-
-                copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.begin()));
-                size_t topN = min(TITLE_TOP_N, docCounts.size());
-                partial_sort(docCounts.begin(), docCounts.begin() + topN, docCounts.end(), _greater_pair_second<pair<DocidType, size_t> >());
-                docCounts.resize(topN);
+                _sortTopN(docCountMap, docCounts, TITLE_TOP_N);
 
                 size_t docid;
                 for(size_t i = 0; i  < docCounts.size(); i ++)
@@ -132,11 +128,7 @@ namespace Sirius
                 }
 
                 vector<pair<DocidType, size_t> > docCounts;
-
-                copy(docCountMap.begin(), docCountMap.end(), inserter(docCounts, docCounts.begin()));
-                size_t topN = min(CONTENT_TOP_N, docCounts.size());
-                partial_sort(docCounts.begin(), docCounts.begin() + topN, docCounts.end(), _greater_pair_second<pair<DocidType, size_t> >());
-                docCounts.resize(topN);
+                _sortTopN(docCountMap, docCounts, CONTENT_TOP_N);
 
                 size_t docid;
                 for(size_t i = 0; i  < docCounts.size(); i ++)
@@ -223,7 +215,7 @@ namespace Sirius
                         LogWarn("line[%u:%s] illegal.", lineno, line.c_str());
                         continue;
                     }
-                    
+
                     docInfo.general.id = atoi(buf[0].c_str());
                     assert(docInfo.general.id);
                     docInfo.general.title = buf[1];
@@ -303,7 +295,20 @@ namespace Sirius
                     _stopWords.insert(word);
                 }
                 assert(_stopWords.size());
+
             }
+
+        private:
+
+            template<class keyT, class valueT>
+                void _sortTopN(const map<keyT, valueT>& mp, vector<pair<keyT, valueT> >& tops, const size_t topN) const
+                {
+                    tops.clear();
+                    copy(mp.begin(), mp.end(), inserter(tops, tops.begin()));
+                    size_t n = min(topN, tops.size());
+                    partial_sort(tops.begin(), tops.begin() + n, tops.end(), _greater_pair_second<pair<keyT, valueT> >());
+                    tops.resize(n);
+                }
 
         private:
             template <class T>
