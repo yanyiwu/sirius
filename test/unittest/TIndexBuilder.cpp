@@ -3,7 +3,7 @@
 
 using namespace Sirius;
 
-const char * const FILE_PATH = "../test/testdata/title_content_rows_2000.utf8";
+const char * const FILE_PATH = "../test/testdata/id_title_content_rows2000.utf8";
 const char * const OUT_FILE_PATH = "word_tokenid_map";
 const char * const TITLE_QUERY_PATH = "../test/testdata/title_query.utf8";
 const char * const CONTENT_QUERY_PATH = "../test/testdata/content_query.utf8";

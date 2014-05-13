@@ -26,9 +26,9 @@ namespace Sirius
                 size_t offset;
                 size_t length;
             };
-        private:
             struct DocGeneralInfo
             {
+                size_t id;
                 DocmetaType meta;
                 string title;
                 string content;
@@ -43,6 +43,7 @@ namespace Sirius
                 DocGeneralInfo general;
                 DocForwardIndexInfo index;
             };
+        private:
             vector<DocInfo> _docInfoRows;
 
         private:
@@ -61,9 +62,7 @@ namespace Sirius
         public:
             bool build(const string& filePath)
             {
-                ifstream ifs(filePath.c_str());
-                assert(ifs);
-                _wrapDocGeneralInfos(ifs, _docInfoRows);
+                _wrapDocGeneralInfos(filePath, _docInfoRows);
                 _buildDocForwardIndexInfos(_docInfoRows, _wordMap);
 
                 _buildTitleInvertedIndex(_docInfoRows, _titleInvertedIndex);
@@ -201,8 +200,9 @@ namespace Sirius
                     _tokenize(words, docInfos[docid].index.contentTokens);
                 }
             }
-            void _wrapDocGeneralInfos(ifstream& ifs, vector<DocInfo>& docInfos) const
+            void _wrapDocGeneralInfos(const string& filePath, vector<DocInfo>& docInfos) const
             {
+                ifstream ifs(filePath.c_str());
                 assert(ifs);
                 string line;
                 vector<string> buf;
@@ -224,9 +224,10 @@ namespace Sirius
                         continue;
                     }
                     
-
-                    docInfo.general.title = buf[0];
-                    docInfo.general.content = buf[1];
+                    docInfo.general.id = atoi(buf[0].c_str());
+                    assert(docInfo.general.id);
+                    docInfo.general.title = buf[1];
+                    docInfo.general.content = buf[2];
                     docInfos.push_back(docInfo);
                 }
             }
@@ -236,8 +237,7 @@ namespace Sirius
                 WordMapType::const_iterator citer;
                 for(size_t i = 0; i < words.size(); i ++)
                 {
-                    const string& word = words[i];
-                    if(_wordMap.end() != (citer = _wordMap.find(word)))
+                    if(!isIn(_stopWords, words[i]) && _wordMap.end() != (citer = _wordMap.find(words[i])))
                     {
                         tokenids.push_back(citer->second);
                     }
@@ -248,15 +248,7 @@ namespace Sirius
             {
                 vector<string> words;
                 _segment.cut(text, words);
-                WordMapType::const_iterator citer;
-                for(size_t i = 0; i < words.size(); i ++)
-                {
-                    const string& word = words[i];
-                    if(_wordMap.end() != (citer = _wordMap.find(word)))
-                    {
-                        tokenids.push_back(citer->second);
-                    }
-                }
+                _tokenize(words, tokenids);
             }
 
             void _updateWordMap(const vector<string>& words, WordMapType& mp) const

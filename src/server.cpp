@@ -15,6 +15,7 @@ class SiriusServer: public InitOnOff
         string _dictPath;
         string _modelPath;
         string _stopWordPath;
+        string _dataPath;
     public:
         SiriusServer(const Config& conf)
         {
@@ -22,6 +23,7 @@ class SiriusServer: public InitOnOff
             CHECK(!_getConfigArg(conf, "dict_path", _dictPath));
             CHECK(!_getConfigArg(conf, "model_path", _modelPath));
             CHECK(!_getConfigArg(conf, "stop_word_path", _stopWordPath));
+            CHECK(!_getConfigArg(conf, "data_path", _dataPath));
         };
         ~SiriusServer(){};
     private:
@@ -48,12 +50,13 @@ class SiriusServer: public InitOnOff
             return true;
         }
     public:
-        bool start()
+        void start()
         {
             IndexBuilder indexBuilder(_dictPath, _modelPath, _stopWordPath);
+            indexBuilder.build(_dataPath);
             RequestHandler reqHandler(indexBuilder);
             EpollServer server(_port, &reqHandler);
-            return server.start();
+            server.start();
         }
 
 };
