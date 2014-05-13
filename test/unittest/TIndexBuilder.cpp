@@ -9,10 +9,11 @@ const char * const TITLE_QUERY_PATH = "../test/testdata/title_query.utf8";
 const char * const CONTENT_QUERY_PATH = "../test/testdata/content_query.utf8";
 const char * const WORD_DICT_PATH = "../dict/word_dict.utf8";
 const char * const HMM_MODEL_PATH = "../dict/hmm_model.utf8";
+const char * const STOP_WORD_PATH = "../dict/stop_words.utf8";
 
 TEST(IndexBuilder, Title)
 {
-    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH);
+    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
     ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));
@@ -30,7 +31,7 @@ TEST(IndexBuilder, Title)
 
 TEST(IndexBuilder, Content)
 {
-    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH);
+    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
     ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));

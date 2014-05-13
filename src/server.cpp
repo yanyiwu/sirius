@@ -8,52 +8,70 @@
 
 using namespace Sirius;
 
-bool run(int argc, char** argv)
+class SiriusServer: public InitOnOff
 {
-    if(argc < 2)
-    {
-        return false;
-    }
-    Config conf(argv[1]);
-    if(!conf)
-    {
-        return false;
-    }
-    unsigned int port = 0;
-    string dictPath;
-    string modelPath;
-    string val;
-    if(!conf.get("port", val))
-    {
-        LogFatal("conf get port failed.");
-        return false;
-    }
-    port = atoi(val.c_str());
+    private:
+        size_t _port;
+        string _dictPath;
+        string _modelPath;
+        string _stopWordPath;
+    public:
+        SiriusServer(const Config& conf)
+        {
+            CHECK(!_getConfigArg(conf, "port", _port));
+            CHECK(!_getConfigArg(conf, "dict_path", _dictPath));
+            CHECK(!_getConfigArg(conf, "model_path", _modelPath));
+            CHECK(!_getConfigArg(conf, "stop_word_path", _stopWordPath));
+        };
+        ~SiriusServer(){};
+    private:
+        bool _getConfigArg(const Config& conf, const string& key, string& value) const
+        {
+            if(!conf.get(key, value))
+            {
+                return false;
+            }
+            return true;
+        }
+        bool _getConfigArg(const Config& conf, const string& key, size_t& value) const
+        {
+            string str;
+            if(!conf.get(key, str))
+            {
+                return false;
+            }
+            value = atoi(str.c_str());
+            if(!value)
+            {
+                return false;
+            }
+            return true;
+        }
+    public:
+        bool start()
+        {
+            IndexBuilder indexBuilder(_dictPath, _modelPath, _stopWordPath);
+            RequestHandler reqHandler(indexBuilder);
+            EpollServer server(_port, &reqHandler);
+            return server.start();
+        }
 
-    if(!conf.get("dict_path", dictPath))
-    {
-        LogFatal("conf get dict_path failed.");
-        return false;
-    }
-    if(!conf.get("model_path", modelPath))
-    {
-        LogFatal("conf get model_path failed.");
-        return false;
-    }
-
-    IndexBuilder indexBuilder(dictPath, modelPath);
-    RequestHandler reqHandler(indexBuilder);
-    EpollServer sf(port, &reqHandler);
-    return sf.start();
-}
+};
 
 int main(int argc, char* argv[])
 {
-    if(!run(argc, argv))
+    if(argc < 2 || 0 ==  strcmp(argv[1], "-h") || 0 == strcmp(argv[1], "--help"))
     {
-        printf("usage: %s <config_file>\n", argv[0]);
+        fprintf(stderr, "usage: %s <config_file>\n", argv[0]);
         return EXIT_FAILURE;
     }
+
+    Config conf(argv[1]);
+    assert(conf);
+
+    SiriusServer server(conf);
+    server.start();
+
     return EXIT_SUCCESS;
 }
 

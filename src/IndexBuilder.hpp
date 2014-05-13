@@ -15,17 +15,16 @@ namespace Sirius
         private:
             MixSegment _segment;
             unordered_set<string> _stopWords;
-            typedef uint32_t TokenidType;
+            typedef size_t TokenidType;
             typedef unordered_map<string, TokenidType> WordMapType;
         private:
             WordMapType _wordMap;
 
-            typedef uint32_t DocidType;
-            typedef uint64_t FileOffsetType;
+            typedef size_t DocidType;
             struct DocmetaType
             {
-                FileOffsetType offset;
-                uint32_t length;
+                size_t offset;
+                size_t length;
             };
         private:
             struct DocGeneralInfo
@@ -52,9 +51,10 @@ namespace Sirius
             InvertedIndexType _contentInvertedIndex;
 
         public:
-            IndexBuilder(const string& dictPath, const string& modelPath): _segment(dictPath, modelPath)
+            IndexBuilder(const string& dictPath, const string& modelPath, const string& stopWordPath): _segment(dictPath, modelPath)
             {
                 assert(_segment);
+                _loadStopWords(stopWordPath);
                 _setInitFlag(_segment);
             }
             ~IndexBuilder(){}
@@ -208,7 +208,7 @@ namespace Sirius
                 vector<string> buf;
                 DocmetaType docmeta;
                 DocInfo docInfo;
-                FileOffsetType offset = 0;
+                size_t offset = 0;
                 for(size_t lineno = 0; getline(ifs, line); lineno ++)
                 {
                     docmeta.offset = offset;
@@ -298,6 +298,19 @@ namespace Sirius
                 }
                 fclose(fout);
                 return true;
+            }
+        private:
+            void _loadStopWords(const string& filePath)
+            {
+                assert(_stopWords.empty());
+                ifstream ifs(filePath.c_str());
+                assert(ifs);
+                string word;
+                while(getline(ifs, word))
+                {
+                    _stopWords.insert(word);
+                }
+                assert(_stopWords.size());
             }
 
         private:

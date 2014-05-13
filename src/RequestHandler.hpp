@@ -29,8 +29,13 @@ namespace Sirius
                     return false;
                 }
                 size_t id = atoi(lines[0].c_str());
+                if(!id)
+                {
+                    LogError("id[%s] illegal.", lines[0].c_str());
+                    return false;
+                }
                 const string& title = lines[1];
-                const string& content = lines[2];
+                //const string& content = lines[2];
                 vector<size_t> docIds;
                 _index.queryTitle(title, docIds);
                 strSnd << docIds;
