@@ -13,11 +13,11 @@ namespace Sirius
 namespace Sirius
 {
 
-    class Indexer: public InitOnOff
+    class Indexer
     {
         private:
             vector<DocInfo> _docInfoRows;
-
+            unordered_map<DocidType, size_t> _docidPosMap;
         private:
             InvertedIndexType _titleInvertedIndex;
             InvertedIndexType _contentInvertedIndex;
@@ -39,7 +39,8 @@ namespace Sirius
             bool build(const string& filePath)
             {
                 _wrapDocGeneralInfos(filePath, _docInfoRows);
-                _buildDocForwardIndexInfos(_docInfoRows);
+                _buildDocidPosMap(_docInfoRows, _docidPosMap);
+                _buildForwardIndex(_docInfoRows);
 
                 _buildInvertedIndex(_docInfoRows, _titleInvertedIndex, GetTitleTokensFunct());
                 _buildInvertedIndex(_docInfoRows, _contentInvertedIndex, GetContentTokensFunct());
@@ -66,36 +67,24 @@ namespace Sirius
             template <class Function>
                 void _buildInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& iindex, Function fn) const
                 {
-                    for(size_t docid = 0; docid < docInfos.size(); docid ++)
+                    for(size_t i = 0; i < docInfos.size(); i ++)
                     {
-                        const vector<TokenidType>& tokens = fn(docInfos[docid]);
+                        const vector<TokenidType>& tokens = fn(docInfos[i]);
                         for(size_t ti = 0; ti < tokens.size(); ti++)
                         {
-                            iindex[tokens[ti]].insert(docid);
+                            iindex[tokens[ti]].insert(docInfos[i].id);
                         }
                     }
                 }
 
-            double _calculateSimilarityRate(const vector<TokenidType>& lhs, const vector<TokenidType>& rhs) const
-            {
-                size_t commonCnt = 0;
-                for(size_t i = 0; i < lhs.size(); i++)
-                {
-                    if(rhs.end() != find(rhs.begin(), rhs.end(), lhs[i]))
-                    {
-                        commonCnt ++;
-                    }
-                }
-                return 2.0 * commonCnt / (lhs.size() + rhs.size());
-            }
 
         private:
-            void _buildDocForwardIndexInfos(vector<DocInfo>& docInfos)
+            void _buildForwardIndex(vector<DocInfo>& docInfos)
             {
-                for(size_t docid = 0; docid < docInfos.size(); docid++)
+                for(size_t i = 0; i < docInfos.size(); i++)
                 {
-                    _tokenizer.tokenize(docInfos[docid].title, docInfos[docid].titleTokens);
-                    _tokenizer.tokenize(docInfos[docid].content, docInfos[docid].contentTokens);
+                    _tokenizer.tokenize(docInfos[i].title, docInfos[i].titleTokens);
+                    _tokenizer.tokenize(docInfos[i].content, docInfos[i].contentTokens);
                 }
             }
             void _wrapDocGeneralInfos(const string& filePath, vector<DocInfo>& docInfos) const
@@ -125,6 +114,13 @@ namespace Sirius
                     docInfo.title = buf[1];
                     docInfo.content = buf[2];
                     docInfos.push_back(docInfo);
+                }
+            }
+            void _buildDocidPosMap(const vector<DocInfo>& docinfos, unordered_map<DocidType, size_t>& mp) const
+            {
+                for(size_t i = 0; i < docinfos.size(); i ++)
+                {
+                    mp[docinfos[i].id] = i;
                 }
             }
 

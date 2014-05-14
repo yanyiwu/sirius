@@ -19,16 +19,10 @@ namespace Sirius
             {
                 vector<DocidType> docids;
                 vector<TokenidType> tokenids;
-                _index.tokenize(req.title, tokenids);
+                
             }
         private:
-            void _query(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
-            {
-                vector<TokenidType> tokenids;
-                _index.tokenize(text, tokenids);
-                _searchTopN(index, tokenids, topN, docIds);
-            }
-            const InvertedIndexValueType* _search(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const
+            const InvertedIndexValueType* _find(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const
             {
                 const InvertedIndexType::const_iterator iter = index.find(key);
                 if(index.end() == iter)
@@ -51,21 +45,28 @@ namespace Sirius
 
         private:
             template <class T>
-                struct _greater_pair_second: public binary_function<T, T, T>
-            {
-                bool operator()(const T& lhs, const T& rhs) const
+                struct _greater_pair_second
+                : public binary_function<T, T, T>
                 {
-                    return lhs.second > rhs.second;
-                }
-            };
+                    bool operator()(const T& lhs, const T& rhs) const
+                    {
+                        return lhs.second > rhs.second;
+                    }
+                };
         private:
+            void _searchTopN(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
+            {
+                vector<TokenidType> tokenids;
+                _index.tokenize(text, tokenids);
+                _searchTopN(index, tokenids, topN, docIds);
+            }
             void _searchTopN(const InvertedIndexType& index, const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docs) const 
             {
                 map<DocidType, size_t> docCountMap;
 
                 for(size_t i = 0; i < tokenids.size(); i ++)
                 {
-                    const InvertedIndexValueType* ptr = _search(index, tokenids[i]);
+                    const InvertedIndexValueType* ptr = _find(index, tokenids[i]);
                     if(ptr)
                     {
                         for(InvertedIndexValueType::const_iterator viter = ptr->begin(); viter != ptr->end(); viter++)
@@ -85,6 +86,18 @@ namespace Sirius
                     //print(_docInfoRows[docid].general.title);
                     docs.push_back(docCounts[i].first);
                 }
+            }
+            double _calculateSimilarityRate(const vector<TokenidType>& lhs, const vector<TokenidType>& rhs) const
+            {
+                size_t commonCnt = 0;
+                for(size_t i = 0; i < lhs.size(); i++)
+                {
+                    if(rhs.end() != find(rhs.begin(), rhs.end(), lhs[i]))
+                    {
+                        commonCnt ++;
+                    }
+                }
+                return 2.0 * commonCnt / (lhs.size() + rhs.size());
             }
     };
 }

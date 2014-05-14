@@ -15,7 +15,6 @@ TEST(Indexer, Title)
 {
     Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
     Indexer index(tokenizer);
-    ASSERT_TRUE(index);
     ASSERT_TRUE(index.build(FILE_PATH));
     vector<size_t> res;
     ifstream ifs(TITLE_QUERY_PATH);
@@ -32,7 +31,6 @@ TEST(Indexer, Content)
 {
     Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
     Indexer index(tokenizer);
-    ASSERT_TRUE(index);
     ASSERT_TRUE(index.build(FILE_PATH));
     vector<size_t> res;
     ifstream ifs(CONTENT_QUERY_PATH);
