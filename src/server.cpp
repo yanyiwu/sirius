@@ -53,7 +53,7 @@ class SiriusServer: public InitOnOff
         void start()
         {
             Tokenizer tokenizer(_dictPath, _modelPath, _stopWordPath);
-            IndexBuilder indexBuilder(tokenizer);
+            Indexer indexBuilder(tokenizer);
             indexBuilder.build(_dataPath);
             RequestHandler reqHandler(indexBuilder);
             EpollServer server(_port, &reqHandler);

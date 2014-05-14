@@ -2,7 +2,7 @@
 #define SIRIUS_REQUESTHANDLER_HPP
 
 #include "Husky/EpollServer.hpp"
-#include "IndexBuilder.hpp"
+#include "Indexer.hpp"
 
 namespace Sirius
 {
@@ -11,7 +11,7 @@ namespace Sirius
     class RequestHandler: public IRequestHandler
     {
         public:
-            RequestHandler(IndexBuilder & index): _index(index)
+            RequestHandler(Indexer & index): _index(index)
             {};
             virtual ~RequestHandler(){};
         public:
@@ -43,7 +43,7 @@ namespace Sirius
                 return true;
             }
         private:
-            IndexBuilder & _index;
+            Indexer & _index;
     };
 }
 
