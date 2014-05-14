@@ -21,6 +21,15 @@ namespace Sirius
         private:
             InvertedIndexType _titleInvertedIndex;
             InvertedIndexType _contentInvertedIndex;
+        public:
+            const InvertedIndexType & getTitleIndex() const
+            {
+                return _titleInvertedIndex;
+            }
+            const InvertedIndexType & getContentIndex() const
+            {
+                return _contentInvertedIndex;
+            }
 
         private:
             Tokenizer& _tokenizer;
@@ -28,6 +37,34 @@ namespace Sirius
             void tokenize(const string& text, vector<TokenidType>& res) const
             {
                 _tokenizer.tokenize(text, res);
+            }
+        public:
+            const DocInfo* find(const DocidType id) const
+            {
+                unordered_map<DocidType, size_t>::const_iterator iter;
+                if(_docidPosMap.end() == (iter = _docidPosMap.find(id)))
+                {
+                    return NULL;
+                }
+                assert(iter->second < _docInfoRows.size());
+                return &_docInfoRows[iter->second];
+            }
+            const InvertedIndexValueType* find(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const
+            {
+                const InvertedIndexType::const_iterator iter = index.find(key);
+                if(index.end() == iter)
+                {
+                    return NULL;
+                }
+                return &iter->second;
+            }
+            const InvertedIndexValueType* findFromTitle(const InvertedIndexType::key_type& key) const
+            {
+                return find(_titleInvertedIndex, key);
+            }
+            const InvertedIndexValueType* findFromContent(const InvertedIndexType::key_type& key) const
+            {
+                return find(_contentInvertedIndex, key);
             }
 
         public:
@@ -120,8 +157,13 @@ namespace Sirius
             {
                 for(size_t i = 0; i < docinfos.size(); i ++)
                 {
-                    mp[docinfos[i].id] = i;
+                    if(!mp.insert(make_pair(docinfos[i].id, i)).second)
+                    {
+                        LogFatal("insert [%u] failed.", docinfos[i].id);
+                        exit(1);
+                    }
                 }
+                assert(mp.size() == docinfos.size());
             }
 
 
