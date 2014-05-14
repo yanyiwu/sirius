@@ -39,17 +39,6 @@ namespace Sirius
                 }
                 return &iter->second;
             }
-        public:
-            void queryTitle(const string& title, vector<DocidType>& docIds) const
-            {
-                _query(title, _titleInvertedIndex, TITLE_TOP_N, docIds);
-            }
-
-            void queryContent(const string& content, vector<DocidType>& docIds) const
-            {
-                _query(content, _contentInvertedIndex, CONTENT_TOP_N, docIds);
-            }
-
         private:
 
             template<class keyT, class valueT>

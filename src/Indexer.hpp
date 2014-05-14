@@ -31,34 +31,40 @@ namespace Sirius
                 _wrapDocGeneralInfos(filePath, _docInfoRows);
                 _buildDocForwardIndexInfos(_docInfoRows);
 
-                _buildTitleInvertedIndex(_docInfoRows, _titleInvertedIndex);
-                _buildContentInvertedIndex(_docInfoRows, _contentInvertedIndex);
+                _buildInvertedIndex(_docInfoRows, _titleInvertedIndex, GetTitleTokensFunct());
+                _buildInvertedIndex(_docInfoRows, _contentInvertedIndex, GetContentTokensFunct());
 
                 return true;
             }
-        private:
-            void _buildTitleInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& titleIIndex) const
+
+            struct GetTitleTokensFunct
             {
-                for(size_t docid = 0; docid < docInfos.size(); docid ++)
+                const vector<TokenidType>& operator() (const DocInfo& docInfo)
                 {
-                    const vector<TokenidType>& tokens = docInfos[docid].titleTokens;
-                    for(size_t ti = 0; ti < tokens.size(); ti++)
+                    return docInfo.titleTokens;
+                }
+            };
+            struct GetContentTokensFunct
+            {
+                const vector<TokenidType>& operator() (const DocInfo& docInfo)
+                {
+                    return docInfo.contentTokens;
+                }
+            };
+
+
+            template <class Function>
+                void _buildInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& iindex, Function fn) const
+                {
+                    for(size_t docid = 0; docid < docInfos.size(); docid ++)
                     {
-                        titleIIndex[tokens[ti]].insert(docid);
+                        const vector<TokenidType>& tokens = fn(docInfos[docid]);
+                        for(size_t ti = 0; ti < tokens.size(); ti++)
+                        {
+                            iindex[tokens[ti]].insert(docid);
+                        }
                     }
                 }
-            }
-            void _buildContentInvertedIndex(const vector<DocInfo>& docInfos, InvertedIndexType& contentIIndex) const
-            {
-                for(size_t docid = 0; docid < docInfos.size(); docid ++)
-                {
-                    const vector<TokenidType>& tokens = docInfos[docid].contentTokens;
-                    for(size_t ti = 0; ti < tokens.size(); ti++)
-                    {
-                        contentIIndex[tokens[ti]].insert(docid);
-                    }
-                }
-            }
 
             double _calculateSimilarityRate(const vector<TokenidType>& lhs, const vector<TokenidType>& rhs) const
             {

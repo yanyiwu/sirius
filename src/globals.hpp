@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
+#include "CppJieba/Limonp/str_functs.hpp"
 
 namespace Sirius
 {
@@ -28,6 +30,10 @@ namespace Sirius
         string title;
         double similar;
     };
+    inline ostream& operator << (ostream& os, const RequestDataUnit& reqdata)
+    {
+        return os << Limonp::string_format("{id:%u, title: %s, content: %s}", reqdata.id, reqdata.title.c_str(), reqdata.content.c_str());
+    }
     typedef vector<ResponseDataUnit> ResponseData; 
 
     struct DocInfo

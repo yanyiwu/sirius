@@ -21,10 +21,10 @@ TEST(IndexBuilder, Title)
     ifstream ifs(TITLE_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;
-    while(getline(ifs, line))
-    {
-        builder.queryTitle(line, res);
-    }
+    //while(getline(ifs, line))
+    //{
+    //    builder.queryTitle(line, res);
+    //}
     
 }
 
@@ -38,9 +38,9 @@ TEST(IndexBuilder, Content)
     ifstream ifs(CONTENT_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;
-    while(getline(ifs, line))
-    {
-        builder.queryContent(line, res);
-    }
+    //while(getline(ifs, line))
+    //{
+    //    builder.queryContent(line, res);
+    //}
     
 }

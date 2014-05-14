@@ -2,7 +2,7 @@
 #define SIRIUS_REQUESTHANDLER_HPP
 
 #include "Husky/EpollServer.hpp"
-#include "Indexer.hpp"
+#include "SearchEngine.hpp"
 
 namespace Sirius
 {
@@ -10,8 +10,11 @@ namespace Sirius
 
     class RequestHandler: public IRequestHandler
     {
+        private:
+            const SearchEngine& _searcher;
         public:
-            RequestHandler(Indexer & index): _index(index)
+            RequestHandler(const SearchEngine& searcher)
+                : _searcher(searcher)
             {};
             virtual ~RequestHandler(){};
         public:
@@ -28,22 +31,23 @@ namespace Sirius
                     LogError("post body illegal [%s]", body.c_str());
                     return false;
                 }
-                size_t id = atoi(lines[0].c_str());
-                if(!id)
+                RequestData reqdata;
+                ResponseData resdata;
+
+                reqdata.id = atoi(lines[0].c_str());
+                if(!reqdata.id)
                 {
                     LogError("id[%s] illegal.", lines[0].c_str());
                     return false;
                 }
-                const string& title = lines[1];
-                //const string& content = lines[2];
-                vector<size_t> docIds;
-                _index.queryTitle(title, docIds);
-                strSnd << docIds;
+                reqdata.title = lines[1];
+                reqdata.content = lines[2];
+
+                _searcher(reqdata, resdata);
+                strSnd << resdata;
                 LogInfo("do_POST result [%s]", strSnd.c_str());
                 return true;
             }
-        private:
-            Indexer & _index;
     };
 }
 
