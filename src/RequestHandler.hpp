@@ -43,7 +43,7 @@ namespace Sirius
                 reqdata.title = lines[1];
                 reqdata.content = lines[2];
 
-                _searcher(reqdata, resdata);
+                _searcher.search(reqdata, resdata);
                 strSnd << resdata;
                 LogInfo("do_POST result [%s]", strSnd.c_str());
                 return true;

@@ -1,4 +1,4 @@
-#include "src/IndexBuilder.hpp"
+#include "src/Indexer.hpp"
 #include "gtest/gtest.h"
 
 using namespace Sirius;
@@ -11,36 +11,36 @@ const char * const WORD_DICT_PATH = "../dict/word_dict.utf8";
 const char * const HMM_MODEL_PATH = "../dict/hmm_model.utf8";
 const char * const STOP_WORD_PATH = "../dict/stop_words.utf8";
 
-TEST(IndexBuilder, Title)
+TEST(Indexer, Title)
 {
     Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
-    IndexBuilder builder(tokenizer);
-    ASSERT_TRUE(builder);
-    ASSERT_TRUE(builder.build(FILE_PATH));
+    Indexer index(tokenizer);
+    ASSERT_TRUE(index);
+    ASSERT_TRUE(index.build(FILE_PATH));
     vector<size_t> res;
     ifstream ifs(TITLE_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;
     //while(getline(ifs, line))
     //{
-    //    builder.queryTitle(line, res);
+    //    index.queryTitle(line, res);
     //}
     
 }
 
-TEST(IndexBuilder, Content)
+TEST(Indexer, Content)
 {
     Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
-    IndexBuilder builder(tokenizer);
-    ASSERT_TRUE(builder);
-    ASSERT_TRUE(builder.build(FILE_PATH));
+    Indexer index(tokenizer);
+    ASSERT_TRUE(index);
+    ASSERT_TRUE(index.build(FILE_PATH));
     vector<size_t> res;
     ifstream ifs(CONTENT_QUERY_PATH);
     ASSERT_TRUE(ifs);
     string line;
     //while(getline(ifs, line))
     //{
-    //    builder.queryContent(line, res);
+    //    index.queryContent(line, res);
     //}
     
 }

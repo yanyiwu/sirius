@@ -10,24 +10,22 @@ namespace Sirius
         public:
             SearchEngine(const Indexer& index)
                 : _index(index)
-            {
-                assert(_index);
-            }
+            {}
             ~SearchEngine(){}
         private:
             const Indexer& _index;
         public:
-            void query(const RequestData& req, ResponseData& res) const
+            void search(const RequestData& req, ResponseData& res) const
             {
                 vector<DocidType> docids;
                 vector<TokenidType> tokenids;
-                _index.tokenize(req.title, )
+                _index.tokenize(req.title, tokenids);
             }
         private:
             void _query(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
             {
                 vector<TokenidType> tokenids;
-                _tokenizer.tokenize(text, tokenids);
+                _index.tokenize(text, tokenids);
                 _searchTopN(index, tokenids, topN, docIds);
             }
             const InvertedIndexValueType* _search(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const

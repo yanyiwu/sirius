@@ -6,19 +6,29 @@
 
 namespace Sirius
 {
+    typedef unordered_map<TokenidType, set<DocidType> > InvertedIndexType;
+    typedef InvertedIndexType::mapped_type InvertedIndexValueType;
+}
+
+namespace Sirius
+{
+
     class Indexer: public InitOnOff
     {
         private:
             vector<DocInfo> _docInfoRows;
 
         private:
-            typedef unordered_map<TokenidType, set<DocidType> > InvertedIndexType;
-            typedef InvertedIndexType::mapped_type InvertedIndexValueType;
             InvertedIndexType _titleInvertedIndex;
             InvertedIndexType _contentInvertedIndex;
 
         private:
             Tokenizer& _tokenizer;
+        public:
+            void tokenize(const string& text, vector<TokenidType>& res) const
+            {
+                _tokenizer.tokenize(text, res);
+            }
 
         public:
             Indexer(Tokenizer& tokenizer)

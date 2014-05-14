@@ -9,6 +9,7 @@
 namespace Sirius
 {
     using namespace std;
+    using namespace Limonp;
 
     const size_t LINE_COLLUMN_N = 3;
     const size_t POST_COLLUMN_N = 3;
@@ -30,9 +31,9 @@ namespace Sirius
         string title;
         double similar;
     };
-    inline ostream& operator << (ostream& os, const RequestDataUnit& reqdata)
+    inline ostream& operator << (ostream& os, const ResponseDataUnit& reqdata)
     {
-        return os << Limonp::string_format("{id:%u, title: %s, content: %s}", reqdata.id, reqdata.title.c_str(), reqdata.content.c_str());
+        return os << string_format("{id:%u, title: %s, content: %lf", reqdata.id, reqdata.title.c_str(), reqdata.similar);
     }
     typedef vector<ResponseDataUnit> ResponseData; 
 
