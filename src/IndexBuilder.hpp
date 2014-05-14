@@ -1,23 +1,13 @@
 #ifndef SIRIUS_INDEX_BUILDER_HPP
 #define SIRIUS_INDEX_BUILDER_HPP
 
+#include "Tokenizer.hpp"
 #include "globals.hpp"
-#include "CppJieba/MixSegment.hpp"
-#include <list>
 
 namespace Sirius
 {
-    using namespace CppJieba;
     class IndexBuilder: public InitOnOff
     {
-        private:
-            MixSegment _segment;
-            unordered_set<string> _stopWords;
-        private:
-            typedef unordered_map<string, TokenidType> WordMapType;
-            WordMapType _wordMap;
-            
-
         private:
             vector<DocInfo> _docInfoRows;
 
@@ -27,19 +17,20 @@ namespace Sirius
             InvertedIndexType _titleInvertedIndex;
             InvertedIndexType _contentInvertedIndex;
 
+        private:
+            Tokenizer& _tokenizer;
+
         public:
-            IndexBuilder(const string& dictPath, const string& modelPath, const string& stopWordPath): _segment(dictPath, modelPath)
+            IndexBuilder(Tokenizer& tokenizer)
+                : _tokenizer(tokenizer)
             {
-                assert(_segment);
-                _loadStopWords(stopWordPath);
-                _setInitFlag(_segment);
             }
             ~IndexBuilder(){}
         public:
             bool build(const string& filePath)
             {
                 _wrapDocGeneralInfos(filePath, _docInfoRows);
-                _buildDocForwardIndexInfos(_docInfoRows, _wordMap);
+                _buildDocForwardIndexInfos(_docInfoRows);
 
                 _buildTitleInvertedIndex(_docInfoRows, _titleInvertedIndex);
                 _buildContentInvertedIndex(_docInfoRows, _contentInvertedIndex);
@@ -50,7 +41,7 @@ namespace Sirius
             void _query(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
             {
                 vector<TokenidType> tokenids;
-                _tokenize(text, tokenids);
+                _tokenizer.tokenize(text, tokenids);
                 _searchTopN(index, tokenids, topN, docIds);
             }
         public:
@@ -102,17 +93,12 @@ namespace Sirius
             }
 
         private:
-            void _buildDocForwardIndexInfos(vector<DocInfo>& docInfos, WordMapType& wordMap) const
+            void _buildDocForwardIndexInfos(vector<DocInfo>& docInfos)
             {
-                vector<string> words;
                 for(size_t docid = 0; docid < docInfos.size(); docid++)
                 {
-                    _segment.cut(docInfos[docid].title, words);
-                    _updateWordMap(words, wordMap);
-                    _tokenize(words, docInfos[docid].titleTokens);
-                    _segment.cut(docInfos[docid].content, words);
-                    _updateWordMap(words, wordMap);
-                    _tokenize(words, docInfos[docid].contentTokens);
+                    _tokenizer.tokenize(docInfos[docid].title, docInfos[docid].titleTokens);
+                    _tokenizer.tokenize(docInfos[docid].content, docInfos[docid].contentTokens);
                 }
             }
             const InvertedIndexValueType* _search(const InvertedIndexType& index, const InvertedIndexType::key_type& key) const
@@ -154,79 +140,7 @@ namespace Sirius
                 }
             }
 
-            void _tokenize(const vector<string>& words, vector<TokenidType>& tokenids) const
-            {
-                WordMapType::const_iterator citer;
-                for(size_t i = 0; i < words.size(); i ++)
-                {
-                    if(!isIn(_stopWords, words[i]) && _wordMap.end() != (citer = _wordMap.find(words[i])))
-                    {
-                        tokenids.push_back(citer->second);
-                    }
-                }
-            }
 
-            void _tokenize(const string& text, vector<TokenidType>& tokenids) const
-            {
-                vector<string> words;
-                _segment.cut(text, words);
-                _tokenize(words, tokenids);
-            }
-
-            void _updateWordMap(const vector<string>& words, WordMapType& mp) const
-            {
-                WordMapType::const_iterator citer ;
-                size_t size;
-                for(size_t i = 0; i < words.size(); i++)
-                {
-                    const string& word = words[i];
-                    if(!isIn(_stopWords, word))
-                    {
-                        if(mp.end() == (citer = mp.find(word)))
-                        {
-                            size = mp.size();
-                            mp[word] = size;
-                        }
-                    }
-                }
-            }
-
-        public:
-            bool dumpWordMap(const string& filePath) const
-            {
-                FILE * fout = fopen(filePath.c_str(), "w");
-                if(!fout)
-                {
-                    LogFatal("open [%s] failed.", filePath.c_str());
-                    return false;
-                }
-                size_t len;
-                TokenidType tokenid;
-                for(WordMapType::const_iterator citer = _wordMap.begin(); citer != _wordMap.end(); citer++)
-                {
-                    len = citer->first.size();
-                    tokenid = citer->second;
-                    fwrite(&len, sizeof(len), 1, fout);
-                    fwrite(citer->first.c_str(), len, 1, fout);
-                    fwrite(&tokenid, sizeof(len), 1, fout);
-                }
-                fclose(fout);
-                return true;
-            }
-        private:
-            void _loadStopWords(const string& filePath)
-            {
-                assert(_stopWords.empty());
-                ifstream ifs(filePath.c_str());
-                assert(ifs);
-                string word;
-                while(getline(ifs, word))
-                {
-                    _stopWords.insert(word);
-                }
-                assert(_stopWords.size());
-
-            }
 
         private:
 
@@ -243,12 +157,12 @@ namespace Sirius
         private:
             template <class T>
                 struct _greater_pair_second: public binary_function<T, T, T>
+            {
+                bool operator()(const T& lhs, const T& rhs) const
                 {
-                    bool operator()(const T& lhs, const T& rhs) const
-                    {
-                        return lhs.second > rhs.second;
-                    }
-                };
+                    return lhs.second > rhs.second;
+                }
+            };
         private:
             void _searchTopN(const InvertedIndexType& index, const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docs) const 
             {

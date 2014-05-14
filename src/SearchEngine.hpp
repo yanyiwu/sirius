@@ -15,10 +15,13 @@ namespace Sirius
             }
             ~SearchEngine(){}
         private:
-            IndexBuilder& _index;
+            const IndexBuilder& _index;
         public:
-            void query(const RequestData& req, ResponseData& res)
+            void query(const RequestData& req, ResponseData& res) const
             {
+                vector<DocidType> docids;
+                vector<TokenidType> tokenids;
+                _index.tokenize(req.title, )
             }
     };
 }

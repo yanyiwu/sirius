@@ -13,10 +13,10 @@ const char * const STOP_WORD_PATH = "../dict/stop_words.utf8";
 
 TEST(IndexBuilder, Title)
 {
-    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
+    Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
+    IndexBuilder builder(tokenizer);
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
-    ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));
     vector<size_t> res;
     ifstream ifs(TITLE_QUERY_PATH);
     ASSERT_TRUE(ifs);
@@ -30,10 +30,10 @@ TEST(IndexBuilder, Title)
 
 TEST(IndexBuilder, Content)
 {
-    IndexBuilder builder(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
+    Tokenizer tokenizer(WORD_DICT_PATH, HMM_MODEL_PATH, STOP_WORD_PATH);
+    IndexBuilder builder(tokenizer);
     ASSERT_TRUE(builder);
     ASSERT_TRUE(builder.build(FILE_PATH));
-    ASSERT_TRUE(builder.dumpWordMap(OUT_FILE_PATH));
     vector<size_t> res;
     ifstream ifs(CONTENT_QUERY_PATH);
     ASSERT_TRUE(ifs);
