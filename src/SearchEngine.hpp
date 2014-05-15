@@ -42,6 +42,7 @@ namespace Sirius
                         unit.id = docid;
                         unit.title = ptDocInfo->title;
                         unit.similar = _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
+                        res.push_back(unit);
                     }
                 }
                 
@@ -58,9 +59,15 @@ namespace Sirius
                         unit.id = docid;
                         unit.title = ptDocInfo->title;
                         unit.similar = _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
+                        res.push_back(unit);
                     }
                 }
 
+                sort(res.begin(), res.end());
+                if(res.size() > RESPONSE_TOP_N)
+                {
+                    res.resize(RESPONSE_TOP_N);
+                }
             }
         private:
             void _searchFromTitle(const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docIds) const

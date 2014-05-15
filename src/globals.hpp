@@ -13,6 +13,8 @@ namespace Sirius
 
     const size_t LINE_COLLUMN_N = 3;
     const size_t POST_COLLUMN_N = 3;
+    
+    const size_t RESPONSE_TOP_N = 10;
 
 
     typedef size_t TokenidType;
@@ -29,6 +31,10 @@ namespace Sirius
         size_t id;
         string title;
         double similar;
+        bool operator < (const ResponseDataUnit& rhs) const
+        {
+            return similar > rhs.similar;
+        }
     };
     inline ostream& operator << (ostream& os, const ResponseDataUnit& reqdata)
     {
