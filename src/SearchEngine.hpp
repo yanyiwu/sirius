@@ -20,41 +20,56 @@ namespace Sirius
         public:
             void search(const RequestData& req, ResponseData& res) const
             {
-                
+                vector<TokenidType> titleTokens, contentTokens;
                 set<DocidType> docidSet;
-                _searchAndMerge(req, docidSet);
-            }
-        private:
-            void _searchAndMerge(const RequestData& req, set<DocidType>& res) const
-            {
                 vector<DocidType> docids;
-                _searchFromTitle(req.title, TITLE_TOP_N, docids);
-                for(size_t i = 0; i < docids.size(); i++)
+                ResponseDataUnit unit;
+                const DocInfo* ptDocInfo;
+                DocidType docid;
+
+                _index.tokenize(req.title, titleTokens);
+                _index.tokenize(req.content, contentTokens);
+
+                _searchFromTitle(titleTokens, TITLE_TOP_N, docids);
+
+                for(size_t i = 0; i < docids.size() ; i++)
                 {
-                    res.insert(docids[i]);
+                    docid = docids[i];
+                    if(docidSet.insert(docid).second)
+                    {
+                        ptDocInfo = _index.find(docid);
+                        assert(docid == ptDocInfo->id);
+                        unit.id = docid;
+                        unit.title = ptDocInfo->title;
+                        unit.similar = _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
+                    }
                 }
                 
                 docids.clear();
-                _searchFromContent(req.content, CONTENT_TOP_N, docids);
-                for(size_t i = 0; i < docids.size(); i++)
+                _searchFromContent(contentTokens, CONTENT_TOP_N, docids);
+
+                for(size_t i = 0; i < docids.size() ; i++)
                 {
-                    res.insert(docids[i]);
+                    docid = docids[i];
+                    if(docidSet.insert(docid).second)
+                    {
+                        ptDocInfo = _index.find(docid);
+                        assert(docid == ptDocInfo->id);
+                        unit.id = docid;
+                        unit.title = ptDocInfo->title;
+                        unit.similar = _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
+                    }
                 }
+
             }
         private:
-            void _searchFromTitle(const string& text, const size_t topN, vector<DocidType>& docIds) const
+            void _searchFromTitle(const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docIds) const
             {
-                return _searchTopN(text, _index.getTitleIndex(), topN, docIds);
+                return _searchTopN(_index.getTitleIndex(), tokenids, topN, docIds);
             }
-            void _searchFromContent(const string& text, const size_t topN, vector<DocidType>& docIds) const
+            void _searchFromContent(const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docIds) const
             {
-                return _searchTopN(text, _index.getContentIndex(), topN, docIds);
-            }
-            void _searchTopN(const string& text, const InvertedIndexType& index, const size_t topN, vector<DocidType>& docIds) const
-            {
-                vector<TokenidType> tokenids;
-                _index.tokenize(text, tokenids);
-                _searchTopN(index, tokenids, topN, docIds);
+                return _searchTopN(_index.getContentIndex(), tokenids, topN, docIds);
             }
             void _searchTopN(const InvertedIndexType& index, const vector<TokenidType>& tokenids, const size_t topN, vector<DocidType>& docs) const 
             {

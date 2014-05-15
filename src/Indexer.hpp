@@ -160,7 +160,7 @@ namespace Sirius
                     if(!mp.insert(make_pair(docinfos[i].id, i)).second)
                     {
                         LogFatal("insert [%u] failed.", docinfos[i].id);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     }
                 }
                 assert(mp.size() == docinfos.size());
