@@ -38,7 +38,7 @@ namespace Sirius
     };
     inline ostream& operator << (ostream& os, const ResponseDataUnit& reqdata)
     {
-        return os << string_format("{id:%u, title: %s, content: %lf", reqdata.id, reqdata.title.c_str(), reqdata.similar);
+        return os << string_format("{id:%u, title: %s, similar: %lf", reqdata.id, reqdata.title.c_str(), reqdata.similar);
     }
     typedef vector<ResponseDataUnit> ResponseData; 
 

@@ -8,8 +8,12 @@ namespace Sirius
     const size_t TITLE_TOP_N = 10;
     const size_t CONTENT_TOP_N = 10;
 
+    static const double TITLE_WEIGHT_FACTOR = 0.7;
+    static const double CONTENT_WEIGHT_FACTOR = 0.3;
+
     class SearchEngine
     {
+        private:
         public:
             SearchEngine(const Indexer& index)
                 : _index(index)
@@ -41,7 +45,7 @@ namespace Sirius
                         assert(docid == ptDocInfo->id);
                         unit.id = docid;
                         unit.title = ptDocInfo->title;
-                        unit.similar = _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
+                        unit.similar = TITLE_WEIGHT_FACTOR * _calculateSimilarityRate(ptDocInfo->titleTokens, titleTokens) + CONTENT_WEIGHT_FACTOR * _calculateSimilarityRate(ptDocInfo->contentTokens, contentTokens);
                         res.push_back(unit);
                     }
                 }
