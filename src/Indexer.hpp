@@ -77,7 +77,6 @@ namespace Sirius
             {
                 _wrapDocGeneralInfos(filePath, _docInfoRows);
                 _buildDocidPosMap(_docInfoRows, _docidPosMap);
-                _buildForwardIndex(_docInfoRows);
 
                 _buildInvertedIndex(_docInfoRows, _titleInvertedIndex, GetTitleTokensFunct());
                 _buildInvertedIndex(_docInfoRows, _contentInvertedIndex, GetContentTokensFunct());
@@ -116,14 +115,6 @@ namespace Sirius
 
 
         private:
-            void _buildForwardIndex(vector<DocInfo>& docInfos)
-            {
-                for(size_t i = 0; i < docInfos.size(); i++)
-                {
-                    _tokenizer.tokenize(docInfos[i].title, docInfos[i].titleTokens);
-                    _tokenizer.tokenize(docInfos[i].content, docInfos[i].contentTokens);
-                }
-            }
             void _wrapDocGeneralInfos(const string& filePath, vector<DocInfo>& docInfos) const
             {
                 ifstream ifs(filePath.c_str());
@@ -149,7 +140,10 @@ namespace Sirius
                     docInfo.id = atoi(buf[0].c_str());
                     assert(docInfo.id);
                     docInfo.title = buf[1];
-                    docInfo.content = buf[2];
+                    docInfo.titleTokens.clear();
+                    _tokenizer.tokenize(docInfo.title, docInfo.titleTokens);
+                    docInfo.contentTokens.clear();
+                    _tokenizer.tokenize(buf[2], docInfo.contentTokens);
                     docInfos.push_back(docInfo);
                 }
             }

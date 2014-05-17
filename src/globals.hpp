@@ -48,7 +48,7 @@ namespace Sirius
         size_t offset;
         size_t length;
         string title;
-        string content;
+        //string content;
         vector<TokenidType>  titleTokens;
         vector<TokenidType> contentTokens;
     };
