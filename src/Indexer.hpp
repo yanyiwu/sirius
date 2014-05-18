@@ -117,6 +117,7 @@ namespace Sirius
         private:
             void _wrapDocGeneralInfos(const string& filePath, vector<DocInfo>& docInfos) const
             {
+                LogDebug("load documents begin ... ");
                 ifstream ifs(filePath.c_str());
                 assert(ifs);
                 string line;
@@ -133,7 +134,6 @@ namespace Sirius
 
                     if(!split(line, buf, "\t") || buf.size() != LINE_COLLUMN_N)
                     {
-                        LogWarn("line[%u:%s] illegal.", lineno, line.c_str());
                         continue;
                     }
 
@@ -146,6 +146,7 @@ namespace Sirius
                     _tokenizer.tokenize(buf[2], docInfo.contentTokens);
                     docInfos.push_back(docInfo);
                 }
+                LogDebug("load documents [%u] finished.", docInfos.size());
             }
             void _buildDocidPosMap(const vector<DocInfo>& docinfos, unordered_map<DocidType, size_t>& mp) const
             {
