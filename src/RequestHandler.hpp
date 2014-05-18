@@ -44,9 +44,29 @@ namespace Sirius
                 reqdata.content = lines[2];
 
                 _searcher.search(reqdata, resdata);
-                strSnd << resdata;
+                _toJson(resdata, strSnd);
                 LogInfo("do_POST result [%s]", strSnd.c_str());
                 return true;
+            }
+        private:
+            void _toJson(const ResponseData& resdata, string& json) const
+            {
+                if(resdata.empty())
+                {
+                    json = "[]";
+                    return;
+                }
+                string tmp;
+                json = "[";
+                tmp << resdata[0];
+                json += tmp;
+                for(size_t i = 1; i < resdata.size(); i++)
+                {
+                    tmp << resdata[i];
+                    json += ',';
+                    json += tmp;
+                }
+                json += ']';
             }
     };
 }
