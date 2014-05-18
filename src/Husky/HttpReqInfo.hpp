@@ -189,7 +189,7 @@ namespace Husky
                     return false;
                 }
 
-                uint pos = url.find('?');
+                size_t pos = url.find('?');
                 if(string::npos == pos)
                 {
                     return false;
