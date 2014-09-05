@@ -1,15 +1,15 @@
-# sirius
+# sirius 中文文档查重服务
 
-## Introduction
+## 简介
 
-Near-Duplicate Checking for Papers(Title and Abstract).
+中文文档(比如论文)，查重服务(根据 title 和 content )，虽然程序代码仓促简陋，但是也算是五脏俱全吧。
 
-## Feature 
+## 特性
 
-+ use [CppJieba] as chinese word segmenter.
-+ support `utf-8` encoding.
++ 使用 [CppJieba] 作为中文分词组件.
++ 支持 `utf-8` 编码.
 
-## Usage
+## 用法
 
 ```
 mkdir build
@@ -18,20 +18,20 @@ cmake ..
 make
 ```
 
-### start server
+### 启动服务
 
 ```
 ./bin/SiriusServer ../conf/sirius_server.conf
 ```
 
-### client example
+### HTTP 访问测试( PUT 方法)
 
 ```
 curl -d @- "http://127.0.0.1:11200/" < ../test/testdata/curl_post_data.utf8
 ```
 
 
-## Contact
+## 联系
 
 wuyanyi09@foxmail.com
 
